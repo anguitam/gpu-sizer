@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>GPU Sizer — Nebius (Light / Dark)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   GPU Sizer — shared structural CSS.
+   All visual identity comes from CSS variables + the small
+   theme-specific block that follows this file in each export.
+   ============================================================ */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body { margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  transition: background-color .25s ease, color .25s ease;
+}
+
+body,
+.card, .ctl, .preset-btn, .toggle-btn, .chart-bar, .bg-decor,
+.sku-table td, .assumptions-panel {
+  transition: background-color .25s ease, border-color .25s ease, color .25s ease, box-shadow .25s ease, opacity .25s ease;
+}
+
+.bg-decor { display: none; }
+
+.app {
+  max-width: var(--max-width, 1180px);
+  margin: 0 auto;
+  padding: var(--page-pad, 28px 20px 60px);
+  position: relative;
+  z-index: 1;
+}
+
+.app-header {
+  border-bottom: var(--header-border, 1px solid var(--border));
+  padding-bottom: 18px;
+  margin-bottom: 22px;
+}
+
+.header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.kicker {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--accent);
+}
+.kicker .kicker-path { color: var(--text); }
+
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 7px 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted);
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.theme-toggle:hover { border-color: var(--border-hover); color: var(--text-strong); }
+.theme-toggle .dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--accent);
+  display: inline-block;
+}
+
+.app-header h1 {
+  font-family: var(--font-heading);
+  font-weight: var(--heading-weight, 700);
+  letter-spacing: var(--heading-tracking, -0.01em);
+  font-size: clamp(22px, 3vw, 30px);
+  color: var(--text-strong);
+  margin: 10px 0 6px;
+}
+
+.lede {
+  font-size: 13px;
+  color: var(--text-muted);
+  max-width: 640px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: var(--sidebar-width, 300px) 1fr;
+  gap: 24px;
+  align-items: start;
+}
+@media (max-width: 860px) {
+  .layout { grid-template-columns: 1fr; }
+}
+
+.panel-inputs { order: var(--sidebar-order, 0); }
+
+.section-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--text-faint);
+  margin-bottom: 10px;
+}
+
+.preset-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-bottom: 18px;
+}
+
+.preset-btn {
+  font-family: var(--font-body);
+  font-size: 11px;
+  text-align: left;
+  line-height: 1.3;
+  padding: 9px 10px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted);
+  border-radius: var(--radius-sm, 4px);
+  cursor: pointer;
+  transition: border-color .15s ease, color .15s ease, background .15s ease;
+}
+.preset-btn:hover { border-color: var(--border-hover); color: var(--text); }
+.preset-btn.is-active {
+  border-color: var(--select-border, var(--accent));
+  color: var(--select-text, var(--accent-strong, var(--accent)));
+  background: var(--select-bg, var(--accent-wash));
+}
+
+.field { display: block; margin-bottom: 13px; }
+.field-label {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-faint);
+  margin-bottom: 5px;
+}
+.field-hint {
+  display: block;
+  font-size: 10px;
+  color: var(--text-faint);
+  margin-top: 4px;
+}
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.ctl {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-strong);
+  padding: 8px 10px;
+  font-size: 13px;
+  font-family: var(--font-mono);
+  border-radius: var(--radius-sm, 4px);
+  outline: none;
+  transition: border-color .15s ease;
+  appearance: none;
+}
+.ctl:focus { border-color: var(--accent); }
+select.ctl { cursor: pointer; }
+
+.rate-block {
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+  margin-top: 16px;
+}
+
+.toggle-btn {
+  width: 100%;
+  font-family: var(--font-body);
+  font-size: 11px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted);
+  border-radius: var(--radius-sm, 4px);
+  cursor: pointer;
+  margin-bottom: 14px;
+  transition: all .15s ease;
+}
+.toggle-btn.is-active {
+  border-color: var(--select-border, var(--accent));
+  color: var(--select-text, var(--accent-strong, var(--accent)));
+  background: var(--select-bg, var(--accent-wash));
+}
+
+.range { width: 100%; accent-color: var(--accent); }
+
+.assumptions-toggle {
+  background: none;
+  border: none;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-faint);
+  cursor: pointer;
+  padding: 6px 0;
+}
+.assumptions-toggle:hover { color: var(--text-muted); }
+
+.assumptions-panel {
+  margin-top: 8px;
+  padding-left: 12px;
+  border-left: 1px solid var(--border);
+}
+
+.card {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: var(--radius-lg, 6px);
+  padding: 18px;
+  margin-bottom: 18px;
+  box-shadow: var(--card-shadow, none);
+}
+.card-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--text-faint);
+  margin-bottom: 12px;
+}
+
+.card-best {
+  border-color: var(--accent-border, var(--accent));
+  background: var(--accent-panel, var(--surface));
+}
+.card-best .card-label { color: var(--accent-strong, var(--accent)); }
+
+.best-headline {
+  font-family: var(--font-heading);
+  font-size: 28px;
+  font-weight: var(--heading-weight, 700);
+  color: var(--headline-color, var(--accent-strong, var(--accent)));
+  margin-bottom: 4px;
+}
+.best-sub { font-size: 12px; color: var(--text-muted); }
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--accent-border-soft, var(--border));
+}
+@media (min-width: 480px) { .stat-grid { grid-template-columns: repeat(4, 1fr); } }
+.stat-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin-bottom: 2px;
+}
+.stat-value { font-size: 14px; color: var(--text-strong); font-family: var(--font-mono); }
+
+.best-foot {
+  font-size: 12px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--accent-border-soft, var(--border));
+}
+.muted { color: var(--text-muted); }
+.faint { color: var(--text-faint); }
+.accent-amber { color: var(--warn, #c9822a); }
+.accent-good { color: var(--good, var(--accent)); }
+
+.derivation { display: flex; flex-direction: column; gap: 6px; }
+.deriv-row { font-size: 12px; display: flex; gap: 8px; font-family: var(--font-mono); }
+.deriv-idx { color: var(--text-faint); user-select: none; }
+.deriv-arrow { color: var(--accent); user-select: none; }
+.deriv-text { color: var(--text-muted); }
+
+.notes {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.note { font-size: 12px; color: var(--warn, #c9822a); }
+
+.chart {
+  height: 200px;
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  padding-top: 10px;
+}
+.chart-col { flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%; }
+.chart-bar-track {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.chart-bar {
+  width: 60%;
+  min-width: 18px;
+  background: var(--chart-bar, var(--border-hover));
+  border-radius: var(--radius-sm, 3px) var(--radius-sm, 3px) 0 0;
+  transition: height .2s ease;
+}
+.chart-bar.is-best { background: var(--accent); }
+.chart-value { font-size: 11px; color: var(--text-muted); font-family: var(--font-mono); margin-top: 6px; }
+.chart-label { font-size: 10px; color: var(--text-faint); margin-top: 2px; }
+
+.table-wrap { overflow-x: auto; }
+.sku-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.sku-table th {
+  text-align: left;
+  font-weight: 400;
+  color: var(--text-faint);
+  padding: 0 12px 8px 0;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.sku-table td { padding: 8px 12px 8px 0; border-top: 1px solid var(--border-soft, var(--border)); color: var(--text-strong); }
+.td-sku { color: var(--text-strong); }
+.td-muted { color: var(--text-muted); }
+.td-accent { color: var(--accent-strong, var(--accent)); }
+.td-infeasible { color: var(--text-faint); font-style: italic; }
+.row-best td { color: var(--accent-strong, var(--accent)); }
+.row-best .td-muted { color: var(--text-muted); }
+
+.disclaimer {
+  font-size: 10px;
+  color: var(--text-faint);
+  line-height: 1.6;
+  margin-top: 16px;
+}
+
+</style>
+<style>
+/* Light = Nebius Landing (nebius.com light sections: white bg, navy #052b42) */
+html[data-theme="light"] {
+  --bg:#ffffff; --surface:#ffffff;
+  --border:#e3e8ec; --border-soft:#eef1f4; --border-hover:#c7d0d8;
+  --text:#375267; --text-strong:#052b42; --text-muted:#4c6478; --text-faint:#8ea0ae;
+  --accent:#052b42; --accent-strong:#052b42;
+  --accent-wash:rgba(5,43,66,.06); --accent-border:#052b42; --accent-border-soft:rgba(5,43,66,.15); --accent-panel:#f3f6f8;
+  --chart-bar:#dde3e8; --warn:#b45f13; --good:#127a52;
+  --headline-color:#052b42;
+  --select-bg:#052b42; --select-text:#ffffff; --select-border:#052b42;
+  --card-shadow:0 1px 2px rgba(5,43,66,.04), 0 16px 32px -20px rgba(5,43,66,.14);
+}
+
+/* Dark = Nebius Console (nebius.com dark section: bg #001a2b, cards #0f2839, lime accent) */
+html[data-theme="dark"] {
+  --bg:#001a2b; --surface:#0f2839;
+  --border:rgba(255,255,255,.09); --border-soft:rgba(255,255,255,.05); --border-hover:rgba(255,255,255,.2);
+  --text:#c7d4dc; --text-strong:#ffffff; --text-muted:#9db0bd; --text-faint:#6b8294;
+  --accent:#E0FF4F; --accent-strong:#E0FF4F;
+  --accent-wash:rgba(224,255,79,.12); --accent-border:rgba(224,255,79,.4); --accent-border-soft:rgba(224,255,79,.22); --accent-panel:rgba(224,255,79,.07);
+  --chart-bar:#1c3548; --warn:#ffb84d; --good:#E0FF4F;
+  --headline-color:#ffffff;
+  --select-bg:#E0FF4F; --select-text:#0f1f14; --select-border:#E0FF4F;
+  --card-shadow:none;
+}
+
+:root, html {
+  --font-body:'Inter',sans-serif; --font-heading:'Inter',sans-serif; --font-mono:'Inter',sans-serif;
+  --heading-weight:800; --heading-tracking:-0.02em; --radius-sm:10px; --radius-lg:20px;
+  --header-border:1px solid var(--border);
+}
+
+/* Brand lime always pops as the "best" highlight, in both modes — matches how
+   nebius.com uses E0FF4F as an accent on both white and navy backgrounds. */
+.chart-bar.is-best { background:#E0FF4F; }
+
+.sku-table td, .stat-value, .deriv-text { font-variant-numeric: tabular-nums; }
+
+/* Decorative hero wash — only in light mode, mirroring the gradient behind
+   nebius.com's white hero/pricing sections. Dark mode stays a flat navy fill,
+   like their "Built by builders" section. */
+html[data-theme="dark"] .bg-decor { display: none; }
+html[data-theme="light"] .bg-decor {
+  display: block;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(900px 380px at 85% -12%, rgba(224,255,79,.22), transparent 60%),
+    radial-gradient(700px 340px at 5% -18%, rgba(50,119,255,.10), transparent 55%);
+}
+
+.kicker { text-transform: uppercase; letter-spacing: 0.14em; font-size: 11px; font-weight: 700; }
+
+.theme-toggle .sun, .theme-toggle .moon { display: none; }
+html[data-theme="light"] .theme-toggle .sun { display: inline; }
+html[data-theme="dark"] .theme-toggle .moon { display: inline; }
+</style>
+</head>
+<body>
+<div class="bg-decor" aria-hidden="true"></div>
+<div class="app">
+  <div class="app-header">
+    <div class="header-top">
+      <div class="kicker">NEBIUS AI CLOUD <span class="kicker-path">/ Sizing Calculator</span></div>
+      <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode">
+        <span class="dot" aria-hidden="true"></span>
+        <span class="sun">Light mode</span>
+        <span class="moon">Dark mode</span>
+      </button>
+    </div>
+    <h1>Physical AI cluster sizing</h1>
+    <p class="lede">Describe a robotics workload. Get a cluster spec, the derivation behind it, and what it costs on Nebius.</p>
+  </div>
+  <div class="layout">
+    <aside class="panel-inputs" id="inputs"></aside>
+    <main class="results" id="results"></main>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   GPU Sizer — shared engine (vanilla JS, no build step).
+   Same calculation model as the original React component.
+   Only markup classes + CSS variables change between theme files.
+   ============================================================ */
+
+/* ---- data/gpus.js ---- */
+const GPUS = [
+  { id: "h100", label: "HGX H100", vramGiB: 80, bwTBs: 3.35, tflopsBF16: 990, rtCores: false, nvlink: true, nodeSize: 8, onDemand: 3.85, committed: 2.15 },
+  { id: "h200", label: "HGX H200", vramGiB: 141, bwTBs: 4.8, tflopsBF16: 990, rtCores: false, nvlink: true, nodeSize: 8, onDemand: 4.5, committed: 2.45 },
+  { id: "b200", label: "HGX B200", vramGiB: 180, bwTBs: 8.0, tflopsBF16: 2250, rtCores: false, nvlink: true, nodeSize: 8, onDemand: 7.15, committed: 3.95 },
+  { id: "l40s", label: "L40S", vramGiB: 48, bwTBs: 0.86, tflopsBF16: 181, rtCores: true, nvlink: false, nodeSize: 1, onDemand: 1.82, committed: 0.9 },
+  { id: "rtxpro6000", label: "RTX PRO 6000", vramGiB: 96, bwTBs: 1.8, tflopsBF16: 250, rtCores: true, nvlink: false, nodeSize: 1, onDemand: 1.8, committed: 0.95 },
+];
+
+const STORAGE = { sharedFsGiBMonth: 0.08, objectGiBMonth: 0.0147 };
+
+/* ---- data/assumptions.js ---- */
+const DEFAULTS = {
+  vramUsableFrac: 0.85,
+  activationMult: 1.3,
+  mfuSingleNode: 0.4,
+  mfuMultiNode: 0.32,
+  tokensPerFrame: 256,
+};
+
+const MODES = {
+  full: { label: "Full fine-tune (AdamW)", bytesPerParam: 16 },
+  lora: { label: "LoRA / adapter", bytesPerParam: 3 },
+  inference: { label: "Inference serving", bytesPerParam: 2 },
+};
+
+const PRESETS = {
+  vla: { label: "VLA policy training", kind: "training", paramsB: 7, mode: "full", cameras: 3, historyFrames: 2, datasetFramesM: 20, epochs: 3, datasetTB: 40 },
+  worldmodel: { label: "World-model pretraining", kind: "training", paramsB: 30, mode: "full", cameras: 1, historyFrames: 16, datasetFramesM: 60, epochs: 2, datasetTB: 300 },
+  finetune: { label: "Policy fine-tune (LoRA)", kind: "training", paramsB: 7, mode: "lora", cameras: 2, historyFrames: 2, datasetFramesM: 2, epochs: 5, datasetTB: 4 },
+  sim: { label: "Large-scale sim rollout", kind: "sim", parallelEnvs: 4096, vramPerEnvGiB: 0.6, stepsPerSecPerEnv: 60, totalStepsB: 2, datasetTB: 20 },
+};
+
+/* ---- lib/ pure model ---- */
+const pow2Ceil = (n) => Math.pow(2, Math.ceil(Math.log2(Math.max(1, n))));
+const fmt = (n, d = 0) => n.toLocaleString("en-US", { maximumFractionDigits: d, minimumFractionDigits: d });
+const usd = (n) => (n >= 1000 ? `$${fmt(n)}` : `$${fmt(n, 2)}`);
+
+function seqLength(cfg, a) {
+  return cfg.cameras * cfg.historyFrames * a.tokensPerFrame;
+}
+
+function memoryFootprint(cfg, a) {
+  const bpp = MODES[cfg.mode].bytesPerParam;
+  const stateGiB = (cfg.paramsB * 1e9 * bpp) / 1024 ** 3;
+  const totalGiB = stateGiB * a.activationMult;
+  return { bpp, stateGiB, totalGiB };
+}
+
+function sizeCluster(totalGiB, gpu, a) {
+  const usable = gpu.vramGiB * a.vramUsableFrac;
+  const minGpus = Math.ceil(totalGiB / usable);
+  const gpus = gpu.nodeSize > 1 ? Math.max(pow2Ceil(minGpus), 1) : minGpus;
+  const nodes = Math.ceil(gpus / gpu.nodeSize);
+  return { usable, minGpus, gpus, nodes, needsIB: nodes > 1 };
+}
+
+function trainingTime(cfg, gpu, gpus, nodes, a) {
+  const seq = seqLength(cfg, a);
+  const tokens = cfg.datasetFramesM * 1e6 * seq * cfg.epochs;
+  const flops = 6 * cfg.paramsB * 1e9 * tokens;
+  const mfu = nodes > 1 ? a.mfuMultiNode : a.mfuSingleNode;
+  const effective = gpu.tflopsBF16 * 1e12 * mfu * gpus;
+  const hours = flops / effective / 3600;
+  return { seq, tokens, flops, mfu, hours };
+}
+
+function simSizing(cfg, gpu, a) {
+  const usable = gpu.vramGiB * a.vramUsableFrac;
+  const envsPerGpu = Math.max(1, Math.floor(usable / cfg.vramPerEnvGiB));
+  const gpus = Math.ceil(cfg.parallelEnvs / envsPerGpu);
+  const nodes = Math.ceil(gpus / Math.max(gpu.nodeSize, 1));
+  const stepsPerSec = cfg.parallelEnvs * cfg.stepsPerSecPerEnv;
+  const hours = (cfg.totalStepsB * 1e9) / stepsPerSec / 3600;
+  return { envsPerGpu, gpus, nodes, stepsPerSec, hours, needsIB: false };
+}
+
+function costOf(gpus, hours, rate, datasetTB, months = 1) {
+  const gpuHours = gpus * hours;
+  const compute = gpuHours * rate;
+  const storage = datasetTB * 1024 * STORAGE.sharedFsGiBMonth * months;
+  return { gpuHours, compute, storage, total: compute + storage };
+}
+
+function evaluate(cfg, gpu, a) {
+  const trace = [];
+  const notes = [];
+
+  if (cfg.kind === "sim") {
+    if (!gpu.rtCores) {
+      return {
+        gpu, feasible: false,
+        reason: "No RT cores — cannot run rasterized/ray-traced simulation",
+        trace: [`${gpu.label} has no RT cores; Isaac Sim / Omniverse rendering requires them`],
+      };
+    }
+    const s = simSizing(cfg, gpu, a);
+    trace.push(`${fmt(gpu.vramGiB)} GiB × ${a.vramUsableFrac} usable = ${fmt(gpu.vramGiB * a.vramUsableFrac, 1)} GiB per GPU`);
+    trace.push(`÷ ${cfg.vramPerEnvGiB} GiB per env = ${s.envsPerGpu} parallel envs per GPU`);
+    trace.push(`${fmt(cfg.parallelEnvs)} envs ÷ ${s.envsPerGpu} = ${s.gpus} GPUs (${s.nodes} node${s.nodes > 1 ? "s" : ""})`);
+    trace.push(`${fmt(cfg.totalStepsB, 1)}B steps ÷ ${fmt(s.stepsPerSec)} steps/s = ${fmt(s.hours, 1)} h wall clock`);
+    if (!gpu.nvlink) notes.push("PCIe only — fine here, rollouts are embarrassingly parallel");
+
+    const od = costOf(s.gpus, s.hours, gpu.onDemand, cfg.datasetTB);
+    const cm = costOf(s.gpus, s.hours, gpu.committed, cfg.datasetTB);
+    return { gpu, feasible: true, ...s, trace, notes, od, cm };
+  }
+
+  const m = memoryFootprint(cfg, a);
+  trace.push(`${cfg.paramsB}B params × ${m.bpp} bytes/param (${MODES[cfg.mode].label}) = ${fmt(m.stateGiB)} GiB`);
+  trace.push(`× ${a.activationMult} activation overhead = ${fmt(m.totalGiB)} GiB resident`);
+
+  const c = sizeCluster(m.totalGiB, gpu, a);
+  trace.push(`${gpu.label}: ${gpu.vramGiB} GiB × ${a.vramUsableFrac} = ${fmt(c.usable, 1)} GiB usable → ${c.minGpus} GPU minimum`);
+  if (c.gpus !== c.minGpus) trace.push(`rounded to ${c.gpus} (power of two for tensor/data parallel)`);
+  if (c.nodes > 1) {
+    trace.push(`${c.gpus} GPUs > ${gpu.nodeSize}/node → ${c.nodes} nodes → InfiniBand fabric required`);
+    notes.push("Multi-node: MFU drops, interconnect becomes a cost driver");
+  } else {
+    trace.push(`fits in one ${gpu.nodeSize}-GPU node → NVLink sufficient, no IB`);
+  }
+  if (!gpu.nvlink && c.gpus > 1) notes.push("PCIe only — no NVLink; sharded training will be bandwidth-bound");
+
+  const t = trainingTime(cfg, gpu, c.gpus, c.nodes, a);
+  trace.push(`seq len = ${cfg.cameras} cam × ${cfg.historyFrames} frames × ${a.tokensPerFrame} tok = ${fmt(t.seq)} tokens/sample`);
+  trace.push(`${fmt(cfg.datasetFramesM)}M samples × ${fmt(t.seq)} × ${cfg.epochs} epochs = ${t.tokens.toExponential(2)} tokens`);
+  trace.push(`6 × ${cfg.paramsB}B × tokens = ${t.flops.toExponential(2)} FLOPs ÷ (${gpu.tflopsBF16} TF × ${t.mfu} MFU × ${c.gpus}) = ${fmt(t.hours, 1)} h`);
+
+  const od = costOf(c.gpus, t.hours, gpu.onDemand, cfg.datasetTB);
+  const cm = costOf(c.gpus, t.hours, gpu.committed, cfg.datasetTB);
+  return { gpu, feasible: true, ...c, ...t, trace, notes, od, cm };
+}
+
+/* ============================================================
+   §UI — vanilla DOM, no framework
+   ============================================================ */
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+const state = {
+  presetKey: "vla",
+  cfg: { ...PRESETS.vla },
+  a: { ...DEFAULTS },
+  committed: false,
+  utilization: 0.9,
+  showAssumptions: false,
+};
+
+function loadPreset(k) {
+  state.presetKey = k;
+  state.cfg = { ...PRESETS[k] };
+  renderAll();
+}
+
+function setCfgField(key, isNumber) {
+  return (e) => {
+    const raw = e.target.value;
+    state.cfg[key] = isNumber ? parseFloat(raw) || 0 : raw;
+    renderAll();
+  };
+}
+
+function fieldHtml(label, inputHtml, hint) {
+  return `<label class="field">
+    <span class="field-label">${escapeHtml(label)}</span>
+    ${inputHtml}
+    ${hint ? `<span class="field-hint">${escapeHtml(hint)}</span>` : ""}
+  </label>`;
+}
+
+function numberInput(id, value, step) {
+  return `<input type="number" ${step ? `step="${step}"` : ""} class="ctl" id="${id}" value="${value}" />`;
+}
+
+function renderInputs(root) {
+  const cfg = state.cfg;
+  const a = state.a;
+
+  const presetButtons = Object.entries(PRESETS)
+    .map(([k, p]) => `<button type="button" class="preset-btn ${state.presetKey === k ? "is-active" : ""}" data-preset="${k}">${escapeHtml(p.label)}</button>`)
+    .join("");
+
+  let workloadFields = "";
+  if (cfg.kind === "training") {
+    const modeOptions = Object.entries(MODES).map(([k, m]) => `<option value="${k}" ${cfg.mode === k ? "selected" : ""}>${escapeHtml(m.label)}</option>`).join("");
+    workloadFields = `
+      ${fieldHtml("Model size (B params)", numberInput("f-paramsB", cfg.paramsB))}
+      ${fieldHtml("Training mode", `<select class="ctl" id="f-mode">${modeOptions}</select>`)}
+      <div class="field-row">
+        ${fieldHtml("Cameras", numberInput("f-cameras", cfg.cameras))}
+        ${fieldHtml("History frames", numberInput("f-historyFrames", cfg.historyFrames))}
+      </div>
+      <div class="field-row">
+        ${fieldHtml("Samples (M)", numberInput("f-datasetFramesM", cfg.datasetFramesM))}
+        ${fieldHtml("Epochs", numberInput("f-epochs", cfg.epochs))}
+      </div>`;
+  } else {
+    workloadFields = `
+      ${fieldHtml("Parallel environments", numberInput("f-parallelEnvs", cfg.parallelEnvs))}
+      <div class="field-row">
+        ${fieldHtml("VRAM / env (GiB)", numberInput("f-vramPerEnvGiB", cfg.vramPerEnvGiB, "0.1"))}
+        ${fieldHtml("Steps/s per env", numberInput("f-stepsPerSecPerEnv", cfg.stepsPerSecPerEnv))}
+      </div>
+      ${fieldHtml("Total rollout steps (B)", numberInput("f-totalStepsB", cfg.totalStepsB, "0.1"))}`;
+  }
+
+  const assumptionsRows = [
+    ["vramUsableFrac", "Usable VRAM fraction"],
+    ["activationMult", "Activation multiplier"],
+    ["mfuSingleNode", "MFU, single node"],
+    ["mfuMultiNode", "MFU, multi-node"],
+  ]
+    .map(([k, label]) => fieldHtml(label, `<input type="number" step="0.01" class="ctl" id="a-${k}" value="${a[k]}" />`))
+    .join("");
+
+  root.innerHTML = `
+    <div class="section-label">Workload</div>
+    <div class="preset-grid">${presetButtons}</div>
+
+    ${workloadFields}
+
+    ${fieldHtml("Dataset on shared FS (TB)", numberInput("f-datasetTB", cfg.datasetTB))}
+
+    <div class="rate-block">
+      <button type="button" class="toggle-btn ${state.committed ? "is-active" : ""}" id="toggle-committed">
+        ${state.committed ? "◉ Committed rate" : "○ On-demand rate"}
+      </button>
+      ${fieldHtml(`Cluster utilization — ${Math.round(state.utilization * 100)}%`, `<input type="range" min="0.3" max="1" step="0.05" id="f-utilization" value="${state.utilization}" class="range" />`)}
+    </div>
+
+    <button type="button" class="assumptions-toggle" id="toggle-assumptions">${state.showAssumptions ? "− " : "+ "}Assumptions</button>
+    ${state.showAssumptions ? `<div class="assumptions-panel">${assumptionsRows}</div>` : ""}
+  `;
+
+  root.querySelectorAll("[data-preset]").forEach((btn) => btn.addEventListener("click", () => loadPreset(btn.dataset.preset)));
+  const bind = (id, key, opts) => {
+    const el = root.querySelector("#" + id);
+    if (el) el.addEventListener(opts && opts.event === "change" ? "change" : "input", setCfgField(key, true));
+  };
+  ["paramsB", "cameras", "historyFrames", "datasetFramesM", "epochs", "parallelEnvs", "vramPerEnvGiB", "stepsPerSecPerEnv", "totalStepsB", "datasetTB"].forEach((k) => bind("f-" + k, k));
+  const modeSel = root.querySelector("#f-mode");
+  if (modeSel) modeSel.addEventListener("change", setCfgField("mode", false));
+
+  ["vramUsableFrac", "activationMult", "mfuSingleNode", "mfuMultiNode"].forEach((k) => {
+    const el = root.querySelector("#a-" + k);
+    if (el) el.addEventListener("input", (e) => { state.a[k] = parseFloat(e.target.value) || 0; renderAll(); });
+  });
+
+  const committedBtn = root.querySelector("#toggle-committed");
+  if (committedBtn) committedBtn.addEventListener("click", () => { state.committed = !state.committed; renderAll(); });
+
+  const utilSlider = root.querySelector("#f-utilization");
+  if (utilSlider) utilSlider.addEventListener("input", (e) => { state.utilization = parseFloat(e.target.value); renderAll(); });
+
+  const assumptionsBtn = root.querySelector("#toggle-assumptions");
+  if (assumptionsBtn) assumptionsBtn.addEventListener("click", () => { state.showAssumptions = !state.showAssumptions; renderAll(); });
+}
+
+function renderChart(root, chartData) {
+  const max = Math.max(1, ...chartData.map((d) => d.cost));
+  const bars = chartData
+    .map((d) => {
+      const pct = Math.max(2, Math.round((d.cost / max) * 100));
+      return `
+        <div class="chart-col">
+          <div class="chart-bar-track">
+            <div class="chart-bar ${d.best ? "is-best" : ""}" style="height:${pct}%" title="${escapeHtml(d.name)}: ${usd(d.cost)}"></div>
+          </div>
+          <div class="chart-value">${usd(d.cost)}</div>
+          <div class="chart-label">${escapeHtml(d.name)}</div>
+        </div>`;
+    })
+    .join("");
+  root.innerHTML = `<div class="chart">${bars}</div>`;
+}
+
+function renderResults(root) {
+  const cfg = state.cfg;
+  const a = state.a;
+  const results = GPUS.map((g) => evaluate(cfg, g, a));
+  const feasible = results.filter((r) => r.feasible);
+  const best = feasible.length
+    ? [...feasible].sort((x, y) => (state.committed ? x.cm.total : x.od.total) - (state.committed ? y.cm.total : y.od.total))[0]
+    : null;
+
+  const rate = (r) => (state.committed ? r.gpu.committed : r.gpu.onDemand);
+  const cost = (r) => (state.committed ? r.cm : r.od);
+
+  const chartData = feasible.map((r) => ({
+    name: r.gpu.label.replace("HGX ", ""),
+    cost: Math.round(cost(r).total),
+    hours: Math.round(r.hours),
+    best: best && r.gpu.id === best.gpu.id,
+  }));
+
+  let bestHtml = "";
+  if (best) {
+    bestHtml = `
+      <div class="card card-best">
+        <div class="card-label">Recommended spec</div>
+        <div class="best-headline">${best.gpus}× ${escapeHtml(best.gpu.label)}</div>
+        <div class="best-sub">
+          ${best.nodes} node${best.nodes > 1 ? "s" : ""} ·
+          ${best.needsIB ? "InfiniBand fabric required" : best.gpu.nvlink ? "NVLink, single node" : "PCIe"} ·
+          ${fmt(best.hours, 1)} h to completion
+        </div>
+        <div class="stat-grid">
+          ${[["GPU-hours", fmt(cost(best).gpuHours)], ["Compute", usd(cost(best).compute)], ["Storage/mo", usd(cost(best).storage)], ["Total", usd(cost(best).total)]]
+            .map(([l, v]) => `<div class="stat"><div class="stat-label">${l}</div><div class="stat-value">${v}</div></div>`)
+            .join("")}
+        </div>
+        <div class="best-foot">
+          <span class="muted">Effective cost per useful GPU-hour at ${Math.round(state.utilization * 100)}% utilization: </span>
+          <span class="accent-amber">${usd(rate(best) / state.utilization)}</span>
+          <span class="faint"> (list ${usd(rate(best))})</span>
+        </div>
+        <div class="best-foot">
+          <span class="muted">Committed vs on-demand on this job: </span>
+          <span class="accent-good">${usd(best.od.total - best.cm.total)} saved (${Math.round((1 - best.cm.total / best.od.total) * 100)}%)</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">Derivation</div>
+        <div class="derivation">
+          ${best.trace.map((line, i) => `<div class="deriv-row"><span class="deriv-idx">${String(i + 1).padStart(2, "0")}</span><span class="deriv-arrow">→</span><span class="deriv-text">${escapeHtml(line)}</span></div>`).join("")}
+        </div>
+        ${best.notes && best.notes.length ? `<div class="notes">${best.notes.map((n) => `<div class="note">! ${escapeHtml(n)}</div>`).join("")}</div>` : ""}
+      </div>`;
+  }
+
+  const tableRows = results
+    .map((r) => {
+      if (r.feasible) {
+        return `<tr class="${best && r.gpu.id === best.gpu.id ? "row-best" : ""}">
+          <td class="td-sku">${escapeHtml(r.gpu.label)}</td>
+          <td class="td-muted">${r.gpu.vramGiB} GiB</td>
+          <td>${r.gpus}</td>
+          <td class="td-muted">${r.nodes}</td>
+          <td class="td-muted">${fmt(r.hours, 1)}</td>
+          <td class="${best && r.gpu.id === best.gpu.id ? "td-accent" : ""}">${usd(cost(r).total)}</td>
+        </tr>`;
+      }
+      return `<tr>
+        <td class="td-sku">${escapeHtml(r.gpu.label)}</td>
+        <td class="td-muted">${r.gpu.vramGiB} GiB</td>
+        <td colspan="4" class="td-infeasible">${escapeHtml(r.reason)}</td>
+      </tr>`;
+    })
+    .join("");
+
+  root.innerHTML = `
+    ${bestHtml}
+    <div class="card">
+      <div class="card-label">Cost to completion by SKU</div>
+      <div id="chart-root"></div>
+    </div>
+    <div class="card">
+      <div class="card-label">All SKUs</div>
+      <div class="table-wrap">
+        <table class="sku-table">
+          <thead><tr>${["SKU", "VRAM", "GPUs", "Nodes", "Hours", "Total"].map((h) => `<th>${h}</th>`).join("")}</tr></thead>
+          <tbody>${tableRows}</tbody>
+        </table>
+      </div>
+    </div>
+    <p class="disclaimer">
+      Sizing heuristic, not a benchmark. MFU is a constant, not measured. Activation
+      overhead is a multiplier, not a formula. No MoE, pipeline-bubble, or
+      gradient-accumulation modeling. Rates are a snapshot of published Nebius
+      list pricing and exclude egress. Every assumption above is editable —
+      if a number looks wrong, change it and see what moves.
+    </p>
+  `;
+
+  renderChart(root.querySelector("#chart-root"), chartData);
+}
+
+function renderAll() {
+  renderInputs(document.getElementById("inputs"));
+  renderResults(document.getElementById("results"));
+}
+
+document.addEventListener("DOMContentLoaded", renderAll);
+
+</script>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function apply(theme) {
+    root.setAttribute('data-theme', theme);
+    btn.setAttribute('aria-pressed', theme === 'dark' ? 'true' : 'false');
+  }
+  apply('light');
+  btn.addEventListener('click', function () {
+    var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    apply(next);
+  });
+})();
+</script>
+</body>
+</html>
